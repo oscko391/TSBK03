@@ -65,8 +65,8 @@ Model* squareModel;
 //----------------------Globals-------------------------------------------------
 Point3D cam, point;
 Model *model1;
-FBOstruct *fbo1, *fbo2;
-GLuint phongshader = 0, plaintextureshader = 0, lowpassShader = 0, truncShader = 0;
+FBOstruct *fbo1, *fbo2, *fbo3, *fbo4;
+GLuint phongshader = 0, plaintextureshader = 0, lowpassShader = 0, truncShader = 0, combineShader = 0;
 
 //-------------------------------------------------------------------------------------
 
@@ -86,12 +86,15 @@ void init(void)
 	phongshader = loadShaders("phong.vert", "phong.frag");  // renders with light (used for initial renderin of teapot)
 	lowpassShader = loadShaders("lowpass.vert", "lowpass.frag");
 	truncShader = loadShaders("truncat.vert", "truncat.frag");
-
+        combineShader = loadShaders("combineShader.vert", "combineShader.frag");
+        
 	printError("init shader");
 
 	fbo1 = initFBO(W, H, 0);
 	fbo2 = initFBO(W, H, 0);
-
+        fbo3 = initFBO(W, H, 0);
+        fbo4 = initFBO(W, H, 0);
+        
 	// load the model
 //	model1 = LoadModelPlus("teapot.obj");
 	model1 = LoadModelPlus("stanford-bunny.obj");
@@ -149,7 +152,7 @@ void display(void)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	//DrawModel(model1, phongshader, "in_Position", "in_Normal", NULL);
+	DrawModel(model1, phongshader, "in_Position", "in_Normal", NULL);
 
 	// Done rendering the FBO! Set up for rendering on screen, using the result as texture!
 	
@@ -168,14 +171,30 @@ void display(void)
 	
 	
 	// lowpass
-	
+	glUseProgram(lowpassShader);
+       // useFBO(fbo3, fbo2, 0L);
+       // DrawModel(squareModel, lowpassShader, "in_Position", NULL, "in_TexCoord");
 
+        int noPingPong = 15;
+        
+	for (int i = 0; i < noPingPong; i++)
+        {
+            useFBO(fbo3, fbo2, 0L);
+            DrawModel(squareModel, lowpassShader, "in_Position", NULL, "in_TexCoord");
+            
+            useFBO(fbo2, fbo3, 0L);
+            DrawModel(squareModel, lowpassShader, "in_Position", NULL, "in_TexCoord");
+        }
 	
-	
-	
+	// combine the shaders
+	glUseProgram(combineShader);
+        glUniform1i(glGetUniformLocation(combineShader, "texUnit2"),1);
+        
+        useFBO(fbo4, fbo2, fbo1);
+        DrawModel(squareModel, combineShader, "in_Position", NULL, "in_TexCoord");
 
 //	glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.
-	useFBO(0L, fbo2, 0L);
+	useFBO(0L, fbo4, 0L);
 	glClearColor(0.0, 0.0, 0.0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
