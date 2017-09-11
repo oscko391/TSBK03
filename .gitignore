@@ -1,2 +1,4 @@
 #ignore obj files
 *.obj
+#ignore common directory
+common/

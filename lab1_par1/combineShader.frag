@@ -11,5 +11,5 @@ void main(void)
     vec4 a = texture(texUnit, outTexCoord);
     vec4 b = texture(texUnit2, outTexCoord);
     
-    out_Color = (a* 0.7 + b * 1.0);
+    out_Color = (a* 0.3 + b * 1.0);
 }

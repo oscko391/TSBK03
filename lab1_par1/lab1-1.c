@@ -66,7 +66,8 @@ Model* squareModel;
 Point3D cam, point;
 Model *model1;
 FBOstruct *fbo1, *fbo2, *fbo3, *fbo4;
-GLuint phongshader = 0, plaintextureshader = 0, lowpassShader = 0, truncShader = 0, combineShader = 0;
+GLuint phongshader = 0, plaintextureshader = 0, lowpassShader = 0, truncShader = 0, combineShader = 0,
+lowpassYShader = 0, lowpassXShader = 0;
 
 //-------------------------------------------------------------------------------------
 
@@ -87,6 +88,8 @@ void init(void)
 	lowpassShader = loadShaders("lowpass.vert", "lowpass.frag");
 	truncShader = loadShaders("truncat.vert", "truncat.frag");
         combineShader = loadShaders("combineShader.vert", "combineShader.frag");
+        lowpassYShader = loadShaders("lowpass.vert", "lowpass_y.frag");
+        lowpassXShader = loadShaders("lowpass.vert", "lowpass_x.frag");
         
 	printError("init shader");
 
@@ -171,20 +174,31 @@ void display(void)
 	
 	
 	// lowpass
-	glUseProgram(lowpassShader);
-       // useFBO(fbo3, fbo2, 0L);
-       // DrawModel(squareModel, lowpassShader, "in_Position", NULL, "in_TexCoord");
+	
 
-        int noPingPong = 15;
+        int noPingPong = 80;
         
-	for (int i = 0; i < noPingPong; i++)
+        for (int i = 0; i < noPingPong; i++)
+        {
+            glUseProgram(lowpassYShader);
+            useFBO(fbo3, fbo2, 0L);
+            DrawModel(squareModel, lowpassYShader, "in_Position", NULL, "in_TexCoord");
+            
+            glUseProgram(lowpassXShader);
+            useFBO(fbo2, fbo3, 0L);
+            DrawModel(squareModel, lowpassXShader, "in_Position", NULL, "in_TexCoord");
+        }
+        
+        //glUseProgram(lowpassShader);
+        // lowpass with 5x5 gauss kernel
+	/*for (int i = 0; i < noPingPong; i++)
         {
             useFBO(fbo3, fbo2, 0L);
             DrawModel(squareModel, lowpassShader, "in_Position", NULL, "in_TexCoord");
             
             useFBO(fbo2, fbo3, 0L);
             DrawModel(squareModel, lowpassShader, "in_Position", NULL, "in_TexCoord");
-        }
+        }*/
 	
 	// combine the shaders
 	glUseProgram(combineShader);
