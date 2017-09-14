@@ -85,6 +85,8 @@ Model *cylinderModel; // Collects all the above for drawing with glDrawElements
 
 mat4 modelViewMatrix, projectionMatrix;
 
+mat4 g_Minverse[kMaxBones]; 
+
 ///////////////////////////////////////////////////
 //		I N I T  B O N E  W E I G H T S
 // Desc:  initierar benvikterna
@@ -238,6 +240,14 @@ void setupBones(void)
   }
 }
 
+void calcInverseM()
+{
+    for (int i = 0; i < kMaxBones; i++)
+    {
+        //kan vara fel kolla på translations matriserna
+        g_Minverse[i] = InvertMat4(Mult(T(g_bones[i].pos.x, g_bones[i].pos.x, g_bones[i].pos.x), IdentityMatrix()));
+    }
+}
 
 ///////////////////////////////////////////////////////
 //		D E F O R M  C Y L I N D E R 
@@ -248,11 +258,36 @@ void DeformCylinder()
   //vec3 v[kMaxBones];
 
   //float w[kMaxBones];
+    /*mat4 M[kMaxBones];
+    mat4 Mprim[kMaxBones];
+
+    Mprim[0] = Mult(T(g_bonesRes[0].pos.x, g_bonesRes[0].pos.y, g_bonesRes[0].pos.z), g_bonesRes[0].rot);
+    M[0] = Mult(Mprim[0], Minv[0]);  */
+    
+  mat4 M[kMaxBones]; //prim * inverse
+  mat4 Mprim[kMaxBones];
+  
+  mat4 Tbone0 = T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z);
+  Mprim[0] = Mult(Tbone0, g_bones[0].rot);
+  M[0] = Mult(Mprim[0], g_Minverse[0]);
+  
+  for (int i = 1; i < kMaxBones; i++)
+  {
+      mat4 tempbone = T(g_bones[i].pos.x - g_bones[i-1].pos.x,
+                        g_bones[i].pos.y - g_bones[i-1].pos.y,
+                        g_bones[i].pos.z - g_bones[i-1].pos.z);
+      
+      Mprim[i] = Mult(tempbone, g_bones[i].rot);
+      M[i] = Mult(Mprim[i], g_Minverse[i]);
+  }
+    
   int row, corner;
 
   // för samtliga vertexar 
   for (row = 0; row < kMaxRow; row++)
   {
+    vec3 tempVec = {0.0f,0.0f,0.0f};
+    
     for (corner = 0; corner < kMaxCorners; corner++)
     {
       // ---------=========  UPG 4 ===========---------
@@ -265,6 +300,17 @@ void DeformCylinder()
       // g_vertsOrg
       // g_vertsRes
       
+    
+      for (int boneIndex = 0;boneIndex <  kMaxBones; boneIndex++)
+      {
+          tempVec = VectorAdd(tempVec ,ScalarMult( MultVec3(M[boneIndex], g_vertsOrg[row][corner]), g_boneWeights[row][corner][boneIndex]));          
+      }
+    
+        
+      g_vertsRes[row][corner] = tempVec;  
+    
+    
+        
     }
   }
 }
@@ -404,6 +450,7 @@ int main(int argc, char **argv)
   BuildCylinder();
   setupBones();
   initBoneWeights();
+  calcInverseM();
 
   	// Build Model from cylinder data
 	cylinderModel = LoadDataToModel(
