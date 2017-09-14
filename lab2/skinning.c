@@ -285,6 +285,10 @@ void setBoneRotation(void)
 {
 	// Uppgift 3 TODO: Här behöver du skicka över benens rotation
 	// till vertexshadern
+        mat4 rotBone0 = g_bones[0].rot;
+        glUniformMatrix4fv(glGetUniformLocation(g_shader, "rotBone0"), 1, GL_TRUE, rotBone0.m);
+        mat4 rotBone1 = g_bones[1].rot;
+        glUniformMatrix4fv(glGetUniformLocation(g_shader, "rotBone1"), 1, GL_TRUE, rotBone1.m);
 }
 
 
@@ -295,6 +299,33 @@ void setBoneLocation(void)
 {
 	// Uppgift 3 TODO: Här behöver du skicka över benens position
 	// till vertexshadern
+       /* mat4 Tbone0 = T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z);
+        glUniformMatrix4fv(glGetUniformLocation(g_shader, "Tbone0"), 1, GL_TRUE, Tbone0.m);
+        
+        mat4 Tbone1 = T(g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z);
+        glUniformMatrix4fv(glGetUniformLocation(g_shader, "Tbone1"), 1, GL_TRUE, Tbone1.m);*/
+          //create matrices
+        /* BONE 1 */
+        mat4 Tbone1 = T(g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z);
+        mat4 orgTbone1 = T(4.5f, 0.0, 0.0);
+        mat4 invMbone1 = InvertMat4(Mult(orgTbone1, IdentityMatrix()));
+        
+        mat4 Mprim1 = Mult(Tbone1, g_bones[1].rot);
+        /* BONE 2 */
+        mat4 Tbone0 = T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z);
+        mat4 orgTbone0 = T(0.0f, 0.0f, 0.0f);
+        mat4 invMbone0 = InvertMat4(Mult(orgTbone0, IdentityMatrix()));
+        
+        mat4 Mprim0 = Mult(Tbone0, g_bones[0].rot);
+        
+        
+        mat4 M_0 = Mult(Mprim0, invMbone0);
+        
+        mat4 M_1 = Mult(Mult(Mprim0, Mprim1),Mult(invMbone1, invMbone0));
+        
+        glUniformMatrix4fv(glGetUniformLocation(g_shader, "M_0"), 1, GL_TRUE, M_0.m);
+        glUniformMatrix4fv(glGetUniformLocation(g_shader, "M_1"), 1, GL_TRUE, M_1.m);
+        
 }
 
 
@@ -309,12 +340,13 @@ void DrawCylinder()
 	// Ersätt DeformCylinder med en vertex shader som gör vad DeformCylinder gör.
 	// Begynnelsen till shaderkoden ligger i filen "shader.vert" ...
 	
-	DeformCylinder();
+	//DeformCylinder();
 	
 	setBoneLocation();
-	setBoneRotation();
+	//setBoneRotation();
+        
 	
-// update cylinder vertices:
+        // update cylinder vertices:
 	glBindVertexArray(cylinderModel->vao);
 	glBindBuffer(GL_ARRAY_BUFFER, cylinderModel->vb);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Point3D)*kMaxRow*kMaxCorners, g_vertsRes, GL_DYNAMIC_DRAW);
@@ -330,8 +362,8 @@ void DisplayWindow()
 	glClearColor(0.4, 0.4, 0.2, 1);
 	glClear(GL_COLOR_BUFFER_BIT+GL_DEPTH_BUFFER_BIT);
 
-    m = Mult(projectionMatrix, modelViewMatrix);
-    glUniformMatrix4fv(glGetUniformLocation(g_shader, "matrix"), 1, GL_TRUE, m.m);
+        m = Mult(projectionMatrix, modelViewMatrix);
+        glUniformMatrix4fv(glGetUniformLocation(g_shader, "matrix"), 1, GL_TRUE, m.m);
 	
 	DrawCylinder();
 
