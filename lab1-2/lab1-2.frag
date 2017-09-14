@@ -28,11 +28,11 @@ void main(void)
     /* PART 2*/
     mat3 mvt = mat3(Ps, Pt, normal);
     
-    //light = light * mvt;
+    light = light * mvt;
     
     normal = normalize(vec3(-bs.x, -bt.x, 1.0));
     
     // Simplified lighting calculation.
     // A full solution would include material, ambient, specular, light sources, multiply by texture.
-    out_Color = vec4( dot(normalPrim, light)) ;
+    out_Color = vec4( dot(normal, light)) ;
 }
