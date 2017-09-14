@@ -209,6 +209,8 @@ void DeformCylinder()
         mat4 Mbone0 = Mult(Tbone0, g_bones[0].rot);
         mat4 invMbone0 = InvertMat4(Mult(invTbone0));
         
+        mat4 Mprim0 = Mult(Tbone0, g_bones[0].rot);
+        mat4 Mprim1 = Mult(Tbone1, g_bones[1].rot);
         
 	// Point3D v1, v2;
 	int row, corner;
