@@ -193,24 +193,22 @@ void DeformCylinder()
         //create matrices
         /* BONE 1 */
         mat4 Tbone1 = T(g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z);
-        mat4 invTbone1 = InvertMat4(Tbone1);
+        mat4 orgTbone1 = T(4.5f, 0.0, 0.0);
+        mat4 invMbone1 = InvertMat4(Mult(orgTbone1, IdentityMatrix()));
         
-        mat4 invRbone1 = InvertMat4(g_bones[1].rot);
-        
-        mat4 Mbone1 = Mult(Tbone1, g_bones[1].rot);
-        mat4 invMbone1 = InvertMat4(Mult(invTbone1, invRbone1));
-        
+        mat4 Mprim1 = Mult(Tbone1, g_bones[1].rot);
         /* BONE 2 */
         mat4 Tbone0 = T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z);
-        mat4 invTbone0 = InvertMat4(Tbone0);
-        
-        mat4 invRbone0 = InvertMat4(g_bones[0].rot);
-        
-        mat4 Mbone0 = Mult(Tbone0, g_bones[0].rot);
-        mat4 invMbone0 = InvertMat4(Mult(invTbone0));
+        mat4 orgTbone0 = T(0.0f, 0.0f, 0.0f);
+        mat4 invMbone0 = InvertMat4(Mult(orgTbone0, IdentityMatrix()));
         
         mat4 Mprim0 = Mult(Tbone0, g_bones[0].rot);
-        mat4 Mprim1 = Mult(Tbone1, g_bones[1].rot);
+        
+        
+        mat4 M_0 = Mult(Mprim0, invMbone0);
+        
+        mat4 M_1 = Mult(Mult(Mprim0, Mprim1),Mult(invMbone1, invMbone0));
+        
         
 	// Point3D v1, v2;
 	int row, corner;
@@ -235,8 +233,11 @@ void DeformCylinder()
 			// row traverserar i cylinderns längdriktning,
 			// corner traverserar "runt" cylindern
 			
-                        g_vertsRes[row][corner] = ScalarMult(MultVec3(Mult(Mbone1, invMbone1), g_vertsOrg[row][corner]), weight[row]);
-                        
+                        //v' = sum(w_i * M_i * v)
+                        if (weight[row] > 0)
+                        {
+                            g_vertsRes[row][corner] = ScalarMult( MultVec3(M_1, g_vertsOrg[row][corner]) , weight[row]);
+                        }
 			
 			// ---=========	Uppgift 2: Soft skinning i CPU ===========------
 			// Deformera cylindern enligt det skelett som finns
