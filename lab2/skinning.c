@@ -66,7 +66,8 @@ Point3D g_normalsRes[kMaxRow][kMaxCorners];
 // vertex attributes sent to OpenGL
 Point3D g_boneWeights[kMaxRow][kMaxCorners];
 
-float weight[kMaxRow] = {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+//float weight[kMaxRow] = {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+float weight[kMaxRow] = {0.0, 0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9, 1.0};
 
 Model *cylinderModel; // Collects all the above for drawing with glDrawElements
 
@@ -233,11 +234,11 @@ void DeformCylinder()
 			// row traverserar i cylinderns längdriktning,
 			// corner traverserar "runt" cylindern
 			
-                        //v' = sum(w_i * M_i * v)
-                        if (weight[row] > 0)
+                        
+                       /* if (weight[row] > 0)
                         {
                             g_vertsRes[row][corner] = ScalarMult( MultVec3(M_1, g_vertsOrg[row][corner]) , weight[row]);
-                        }
+                        }*/
 			
 			// ---=========	Uppgift 2: Soft skinning i CPU ===========------
 			// Deformera cylindern enligt det skelett som finns
@@ -249,6 +250,11 @@ void DeformCylinder()
 			// g_boneWeights innehåller blendvikter för benen.
 			// g_vertsOrg innehåller ursprunglig vertexdata.
 			// g_vertsRes innehåller den vertexdata som skickas till OpenGL.
+			
+			//v' = sum(w_i * M_i * v)
+			
+                            g_vertsRes[row][corner] =  VectorAdd(ScalarMult( MultVec3(M_0, g_vertsOrg[row][corner]) , 1 - weight[row]), 
+                                 ScalarMult( MultVec3(M_1, g_vertsOrg[row][corner]) , weight[row]));
 			
 		}
 	}
