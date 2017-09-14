@@ -86,6 +86,7 @@ Model *cylinderModel; // Collects all the above for drawing with glDrawElements
 mat4 modelViewMatrix, projectionMatrix;
 
 mat4 g_Minverse[kMaxBones]; 
+mat4 g_Min[kMaxBones];
 
 ///////////////////////////////////////////////////
 //		I N I T  B O N E  W E I G H T S
@@ -242,10 +243,26 @@ void setupBones(void)
 
 void calcInverseM()
 {
+    g_Minverse[0] = IdentityMatrix();
+    
+    for (int i = 1; i < kMaxBones; i++)
+    {
+        mat4 tempbone = T(g_bones[i].pos.x - g_bones[i-1].pos.x,
+                        g_bones[i].pos.y - g_bones[i-1].pos.y,
+                        g_bones[i].pos.z - g_bones[i-1].pos.z);
+        
+        g_Minverse[i] = InvertMat4(Mult(tempbone, IdentityMatrix()));
+    }
+    
+    
     for (int i = 0; i < kMaxBones; i++)
     {
-        //kan vara fel kolla på translations matriserna
-        g_Minverse[i] = InvertMat4(Mult(T(g_bones[i].pos.x, g_bones[i].pos.x, g_bones[i].pos.x), IdentityMatrix()));
+        mat4 temp = g_Minverse[i];
+        for (int j = i-1; j >= 0; j--)
+        {
+            temp = Mult(g_Minverse[j]);
+        }
+        g_Min[i] = temp;
     }
 }
 
@@ -267,19 +284,32 @@ void DeformCylinder()
   mat4 M[kMaxBones]; //prim * inverse
   mat4 Mprim[kMaxBones];
   
-  mat4 Tbone0 = T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z);
-  Mprim[0] = Mult(Tbone0, g_bones[0].rot);
+  mat4 Tbone0 = T(g_bonesRes[0].pos.x, g_bonesRes[0].pos.y, g_bonesRes[0].pos.z);
+  Mprim[0] = Mult(Tbone0, g_bonesRes[0].rot);
   M[0] = Mult(Mprim[0], g_Minverse[0]);
   
   for (int i = 1; i < kMaxBones; i++)
   {
-      mat4 tempbone = T(g_bones[i].pos.x - g_bones[i-1].pos.x,
-                        g_bones[i].pos.y - g_bones[i-1].pos.y,
-                        g_bones[i].pos.z - g_bones[i-1].pos.z);
+      mat4 tempbone = T(g_bonesRes[i].pos.x - g_bonesRes[i-1].pos.x,
+                        g_bonesRes[i].pos.y - g_bonesRes[i-1].pos.y,
+                        g_bonesRes[i].pos.z - g_bonesRes[i-1].pos.z);
       
-      Mprim[i] = Mult(tempbone, g_bones[i].rot);
-      M[i] = Mult(Mprim[i], g_Minverse[i]);
+      Mprim[i] = Mult(tempbone, g_bonesRes[i].rot);
   }
+  
+  //beräkna M-matriserna
+  for (int i = 1; i < kMaxBones; i++)
+  {
+      mat4 temp = IdentityMatrix();
+      for(int j = 0; j < i; j++)
+      {
+          temp = Mult(temp,Mprim[j]);
+      }
+      M[i] = temp;
+  }
+  
+  
+  
     
   int row, corner;
 

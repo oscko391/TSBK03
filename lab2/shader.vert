@@ -20,8 +20,8 @@ uniform mat4 M_1;
 void main(void)
 {
 	// transformera resultatet med ModelView- och Projection-matriserna
-	gl_Position = matrix * (in_TexCoord.x * M_0 + in_TexCoord.y * M_1) * vec4(in_Position, 1.0);
-
+	//gl_Position = matrix * (in_TexCoord.x * M_0 + in_TexCoord.y * M_1) * vec4(in_Position, 1.0);
+        gl_Position = matrix * vec4(in_Position, 1.0);
 	// sätt röd+grön färgkanal till vertex Weights
 	vec4 color = vec4(in_TexCoord.x, in_TexCoord.y, 0.0, 1.0);
 
