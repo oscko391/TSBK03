@@ -255,7 +255,7 @@ void calcInverseM()
     }
     
     
-    for (int i = 0; i < kMaxBones; i++)
+   /* for (int i = 0; i < kMaxBones; i++)
     {
         mat4 temp = g_Minverse[i];
         for (int j = i-1; j >= 0; j--)
@@ -263,7 +263,7 @@ void calcInverseM()
             temp = Mult(g_Minverse[j]);
         }
         g_Min[i] = temp;
-    }
+    }*/
 }
 
 ///////////////////////////////////////////////////////
@@ -272,15 +272,6 @@ void calcInverseM()
 // Desc:	deformera cylinder meshen enligt skelettet
 void DeformCylinder()
 {
-  //vec3 v[kMaxBones];
-
-  //float w[kMaxBones];
-    /*mat4 M[kMaxBones];
-    mat4 Mprim[kMaxBones];
-
-    Mprim[0] = Mult(T(g_bonesRes[0].pos.x, g_bonesRes[0].pos.y, g_bonesRes[0].pos.z), g_bonesRes[0].rot);
-    M[0] = Mult(Mprim[0], Minv[0]);  */
-    
   mat4 M[kMaxBones]; //prim * inverse
   mat4 Mprim[kMaxBones];
   
@@ -294,18 +285,18 @@ void DeformCylinder()
                         g_bonesRes[i].pos.y - g_bonesRes[i-1].pos.y,
                         g_bonesRes[i].pos.z - g_bonesRes[i-1].pos.z);
       
-      Mprim[i] = Mult(tempbone, g_bonesRes[i].rot);
-  }
-  
-  //beräkna M-matriserna
-  for (int i = 1; i < kMaxBones; i++)
-  {
-      mat4 temp = IdentityMatrix();
-      for(int j = 0; j < i; j++)
+      mat4 tempMprim = Mult(tempbone, g_bonesRes[i].rot);
+      Mprim[i] = Mult(Mprim[i-1], tempMprim);
+      
+      mat4 tempInv = Mprim[i];
+      
+      for (int j = i; j >= 0; j--)
       {
-          temp = Mult(temp,Mprim[j]);
+            tempInv = Mult(tempInv, g_Minverse[j]);
       }
-      M[i] = temp;
+      
+      M[i] = tempInv;
+      
   }
   
   
@@ -333,7 +324,7 @@ void DeformCylinder()
     
       for (int boneIndex = 0;boneIndex <  kMaxBones; boneIndex++)
       {
-          tempVec = VectorAdd(tempVec ,ScalarMult( MultVec3(M[boneIndex], g_vertsOrg[row][corner]), g_boneWeights[row][corner][boneIndex]));          
+          tempVec = VectorAdd(tempVec ,ScalarMult( MultVec3(M[boneIndex], g_vertsOrg[row][corner]),              g_boneWeights[row][corner][boneIndex]));          
       }
     
         
