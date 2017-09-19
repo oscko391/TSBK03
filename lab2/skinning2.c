@@ -84,9 +84,7 @@ vec2 g_boneWeightVis[kMaxRow][kMaxCorners]; // Copy data to here to visualize yo
 Model *cylinderModel; // Collects all the above for drawing with glDrawElements
 
 mat4 modelViewMatrix, projectionMatrix;
-
-mat4 g_Minverse[kMaxBones]; 
-mat4 g_Min[kMaxBones];
+mat4 g_Minv[kMaxBones];
 
 ///////////////////////////////////////////////////
 //		I N I T  B O N E  W E I G H T S
@@ -241,31 +239,23 @@ void setupBones(void)
   }
 }
 
-void calcInverseM()
+
+void initInverse(void)
 {
-    g_Minverse[0] = IdentityMatrix();
+    // initialize first value
+    g_Minv[0] = InvertMat4(Mult(T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z), g_bones[0].rot));
     
     for (int i = 1; i < kMaxBones; i++)
     {
-        mat4 tempbone = T(g_bones[i].pos.x - g_bones[i-1].pos.x,
+         mat4 tempBone = T(g_bones[i].pos.x - g_bones[i-1].pos.x,
                         g_bones[i].pos.y - g_bones[i-1].pos.y,
                         g_bones[i].pos.z - g_bones[i-1].pos.z);
+         
         
-        g_Minverse[i] = InvertMat4(Mult(tempbone, IdentityMatrix()));
+        g_Minv[i] = Mult(InvertMat4(Mult(tempBone, g_bones[i].rot)) , g_Minv[i-1]);
     }
     
-    
-   /* for (int i = 0; i < kMaxBones; i++)
-    {
-        mat4 temp = g_Minverse[i];
-        for (int j = i-1; j >= 0; j--)
-        {
-            temp = Mult(g_Minverse[j]);
-        }
-        g_Min[i] = temp;
-    }*/
 }
-
 ///////////////////////////////////////////////////////
 //		D E F O R M  C Y L I N D E R 
 //
@@ -275,27 +265,20 @@ void DeformCylinder()
   mat4 M[kMaxBones]; //prim * inverse
   mat4 Mprim[kMaxBones];
   
+  
   mat4 Tbone0 = T(g_bonesRes[0].pos.x, g_bonesRes[0].pos.y, g_bonesRes[0].pos.z);
   Mprim[0] = Mult(Tbone0, g_bonesRes[0].rot);
-  M[0] = Mult(Mprim[0], g_Minverse[0]);
+  M[0] = Mult(Mprim[0], g_Minv[0]);
   
   for (int i = 1; i < kMaxBones; i++)
   {
-      mat4 tempbone = T(g_bonesRes[i].pos.x - g_bonesRes[i-1].pos.x,
+      mat4 tempBone = T(g_bonesRes[i].pos.x - g_bonesRes[i-1].pos.x,
                         g_bonesRes[i].pos.y - g_bonesRes[i-1].pos.y,
                         g_bonesRes[i].pos.z - g_bonesRes[i-1].pos.z);
       
-      mat4 tempMprim = Mult(tempbone, g_bonesRes[i].rot);
-      Mprim[i] = Mult(Mprim[i-1], tempMprim);
+      Mprim[i] = Mult(Mprim[i-1], Mult(tempBone, g_bonesRes[i].rot));
       
-      mat4 tempInv = Mprim[i];
-      
-      for (int j = i; j >= 0; j--)
-      {
-            tempInv = Mult(tempInv, g_Minverse[j]);
-      }
-      
-      M[i] = tempInv;
+      M[i] = Mult(Mprim[i], g_Minv[i]);
       
   }
   
@@ -307,7 +290,6 @@ void DeformCylinder()
   // för samtliga vertexar 
   for (row = 0; row < kMaxRow; row++)
   {
-    vec3 tempVec = {0.0f,0.0f,0.0f};
     
     for (corner = 0; corner < kMaxCorners; corner++)
     {
@@ -321,17 +303,16 @@ void DeformCylinder()
       // g_vertsOrg
       // g_vertsRes
       
-    
-      for (int boneIndex = 0;boneIndex <  kMaxBones; boneIndex++)
-      {
-          tempVec = VectorAdd(tempVec ,ScalarMult( MultVec3(M[boneIndex], g_vertsOrg[row][corner]),              g_boneWeights[row][corner][boneIndex]));          
-      }
-    
+        vec3 sum = {0.0,0.0,0.0};
         
-      g_vertsRes[row][corner] = tempVec;  
-    
-    
-        
+        for (int boneIndex = 0; boneIndex <  kMaxBones; boneIndex++)
+        {
+            sum = VectorAdd( sum , ScalarMult( MultVec3(M[boneIndex],
+                                    g_vertsOrg[row][corner]),
+                                    g_boneWeights[row][corner][boneIndex]));          
+        }
+
+        g_vertsRes[row][corner] = sum;
     }
   }
 }
@@ -345,7 +326,7 @@ void animateBones(void)
 {
 	int bone;
 	// Hur mycket kring varje led? €ndra gŠrna.
-	float angleScales[10] = { 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f };
+	float angleScales[10] = { 1.f, -1.f, -1.f, 1.f, 1.f, -0.7f, -0.5f, 1.f, 3.f, 4.f };
 
 	float time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 	// Hur mycket skall vi vrida?
@@ -471,7 +452,7 @@ int main(int argc, char **argv)
   BuildCylinder();
   setupBones();
   initBoneWeights();
-  calcInverseM();
+  initInverse();
 
   	// Build Model from cylinder data
 	cylinderModel = LoadDataToModel(
