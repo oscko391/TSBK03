@@ -184,9 +184,17 @@ void updateWorld()
 
 	// Detect collisions, calculate speed differences, apply forces
 	for (i = 0; i < kNumBalls; i++)
-        for (j = i+1; j < kNumBalls; j++)
         {
-            // YOUR CODE HERE
+            for (j = i+1; j < kNumBalls; j++)
+            {
+                vec3 deltaX = VectorSub(ball[i].X, ball[j].X);
+                
+                // check if collision
+                if (Norm(deltaX) < 2 * kBallSize)
+                {
+                    
+                }
+            }
         }
 
 	// Control rotation here to reflect
