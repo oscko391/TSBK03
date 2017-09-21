@@ -244,8 +244,8 @@ void initInverse(void)
 {
     // initialize first value
     g_Minv[0] = InvertMat4(Mult(T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z), g_bones[0].rot));
-    
-    for (int i = 1; i < kMaxBones; i++)
+    int i;
+    for ( i = 1; i < kMaxBones; i++)
     {
          mat4 tempBone = T(g_bones[i].pos.x - g_bones[i-1].pos.x,
                         g_bones[i].pos.y - g_bones[i-1].pos.y,
@@ -270,7 +270,8 @@ void DeformCylinder()
   Mprim[0] = Mult(Tbone0, g_bonesRes[0].rot);
   M[0] = Mult(Mprim[0], g_Minv[0]);
   
-  for (int i = 1; i < kMaxBones; i++)
+  int i;
+  for (i = 1; i < kMaxBones; i++)
   {
       mat4 tempBone = T(g_bonesRes[i].pos.x - g_bonesRes[i-1].pos.x,
                         g_bonesRes[i].pos.y - g_bonesRes[i-1].pos.y,
@@ -304,8 +305,8 @@ void DeformCylinder()
       // g_vertsRes
       
         vec3 sum = {0.0,0.0,0.0};
-        
-        for (int boneIndex = 0; boneIndex <  kMaxBones; boneIndex++)
+	 int boneIndex;
+        for (boneIndex = 0; boneIndex <  kMaxBones; boneIndex++)
         {
             sum = VectorAdd( sum , ScalarMult( MultVec3(M[boneIndex],
                                     g_vertsOrg[row][corner]),

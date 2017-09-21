@@ -235,7 +235,7 @@ void DeformCylinder()
 			// corner traverserar "runt" cylindern
 			
                         
-                       /* if (weight[row] > 0)
+                        /*if (weight[row] > 0)
                         {
                             g_vertsRes[row][corner] = ScalarMult( MultVec3(M_1, g_vertsOrg[row][corner]) , weight[row]);
                         }*/
