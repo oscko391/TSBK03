@@ -77,7 +77,7 @@ typedef struct
 
   vec3 F, T; // accumulated force and torque
 
-//  mat4 J, Ji; We could have these but we can live without them for spheres.
+  mat4 J, Ji; //We could have these but we can live without them for spheres.
   vec3 omega; // Angular momentum
   vec3 v; // Change in velocity
 
@@ -103,7 +103,7 @@ Material ballMt = { { 1.0, 1.0, 1.0, 1.0 }, { 1.0, 1.0, 1.0, 0.0 },
                 };
 
 
-enum {kNumBalls = 16}; // Change as desired, max 16
+enum {kNumBalls = 4}; // Change as desired, max 16
 
 //------------------------------Globals---------------------------------
 ModelTexturePair tableAndLegs, tableSurf;
@@ -182,6 +182,7 @@ void updateWorld()
 			ball[i].P.z = -abs(ball[i].P.z);
 	}
 
+	float elasticity = 1.0;
 	// Detect collisions, calculate speed differences, apply forces
 	for (i = 0; i < kNumBalls; i++)
         {
@@ -190,9 +191,21 @@ void updateWorld()
                 vec3 deltaX = VectorSub(ball[i].X, ball[j].X);
                 
                 // check if collision
-                if (Norm(deltaX) < 2 * kBallSize)
+                if ((Norm(deltaX) < 2.0 * kBallSize) && DotProduct(ball[i].v, deltaX) < DotProduct(ball[j].v,deltaX))
                 {
-                    
+                    vec3 Ra = ScalarMult(Normalize(deltaX), kBallSize);
+		    vec3 Rb = ScalarMult(Normalize(deltaX), -1.0f * kBallSize);
+		    
+		    vec3 VpA = VectorAdd(ball[i].v, CrossProduct(ball[i].omega, Ra));
+		    vec3 VpB = VectorAdd(ball[j].v, CrossProduct(ball[j].omega, Rb));
+		    
+		    float Vrel = DotProduct(VectorSub(VpA, VpB), Normalize(deltaX));
+		    
+		    float impulseJ = -(elasticity + 1) * Vrel / (1 / ball[i].mass + 1 / ball[j].mass);
+		    
+		    // update linear momentum
+		    ball[i].P = VectorAdd(ball[i].P, ScalarMult(Normalize(deltaX),impulseJ));
+		    ball[j].P = VectorAdd(ball[j].P, ScalarMult(Normalize(deltaX), -impulseJ));
                 }
             }
         }
@@ -206,6 +219,25 @@ void updateWorld()
             vec3 axis = CrossProduct(SetVector(0.0,1.0,0.0), ball[i].v);
             float speed = 0.01 * Norm(ball[i].v) * glutGet(GLUT_ELAPSED_TIME * 0.001);
             ball[i].R = ArbRotate(axis, speed);
+	    
+// 	    vec3 v_grel = VectorAdd(ball[i].v, CrossProduct(ball[i].omega, ScalarMult(up, -kBallSize)));
+// 	    vec3 friction = ScalarMult(v_grel, -1);
+// 	
+// 	    ball[i].T = VectorAdd(ball[i].T, CrossProduct(ScalarMult(up, -kBallSize), friction));
+// 	    ball[i].F = VectorAdd(ball[i].F, friction);
+// 	    ball[i].omega = MultVec3(ball[i].Ji, ball[i].L);
+	    
+	    // More correct rotation
+	    // calc friction
+	    // should be between 0.15 - 0.4
+	    float fricCoeff = 0.2;
+	    vec3 vGround = VectorAdd(ball[i].v, CrossProduct(ball[i].omega, (vec3){0, -kBallSize, 0}));
+
+	    
+	    vec3 Fn = SetVector(0.0, -9.82 * ball[i].mass, 0.0);
+	    vec3 Friction = ScalarMult(ball[i].v, fricCoeff * Fn);
+	    
+	    ball[i].omega = MultMat3Vec3(mat4tomat3(ball[i].Ji), ball[i].L);
 	}
 
 // Update state, follows the book closely
@@ -216,7 +248,9 @@ void updateWorld()
 
 		// Note: omega is not set. How do you calculate it?
 		// YOUR CODE HERE
-
+		
+		
+		
 //		v := P * 1/mass
 		ball[i].v = ScalarMult(ball[i].P, 1.0/(ball[i].mass));
 //		X := X + v*dT
@@ -319,15 +353,23 @@ void init()
 		ball[i].X = SetVector(0.0, 0.0, 0.0);
 		ball[i].P = SetVector(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
 		ball[i].R = IdentityMatrix();
+		ball[i].J = IdentityMatrix();
+		ball[i].J.m[0] = (2 / 5) * ball[i].mass * pow(kBallSize,2);
+		ball[i].J.m[5] = (2 / 5) * ball[i].mass * pow(kBallSize,2);
+		ball[i].J.m[10] = (2 / 5) * ball[i].mass * pow(kBallSize,2);
+		ball[i].Ji = InvertMat4(ball[i].J);
 	}
-	ball[0].X = SetVector(0, 0, 0);
-	ball[1].X = SetVector(0, 0, 0.5);
-	ball[2].X = SetVector(0.0, 0, 1.0);
-	ball[3].X = SetVector(0, 0, 1.5);
+	// change mass of white ball
+	ball[0].mass = 5.0;
+	
+	ball[0].X = SetVector(0.5, 0, 0.2);
+	ball[1].X = SetVector(0.1, 0, 0.5);
+	ball[2].X = SetVector(0.4, 0, 1.0);
+	ball[3].X = SetVector(0.3, 0, 1.5);
 	ball[0].P = SetVector(0, 0, 0);
 	ball[1].P = SetVector(0, 0, 0);
 	ball[2].P = SetVector(0, 0, 0);
-	ball[3].P = SetVector(0, 0, 1.00);
+	ball[3].P = SetVector(0, 0, 4.00);
 
     cam = SetVector(0, 2, 2);
     point = SetVector(0, 0, 0);

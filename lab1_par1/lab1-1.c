@@ -177,8 +177,8 @@ void display(void)
 	
 
         int noPingPong = 80;
-        
-        for (int i = 0; i < noPingPong; i++)
+        int i;
+        for ( i = 0; i < noPingPong; i++)
         {
             glUseProgram(lowpassYShader);
             useFBO(fbo3, fbo2, 0L);
