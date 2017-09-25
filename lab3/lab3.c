@@ -214,30 +214,27 @@ void updateWorld()
 	// friction against floor, simplified as well as more correct
 	for (i = 0; i < kNumBalls; i++)
 	{
-		// YOUR CODE HERE
+            // YOUR CODE HERE
             // simplified cheat rotation
-            vec3 axis = CrossProduct(SetVector(0.0,1.0,0.0), ball[i].v);
-            float speed = 0.01 * Norm(ball[i].v) * glutGet(GLUT_ELAPSED_TIME * 0.001);
-            ball[i].R = ArbRotate(axis, speed);
-	    
-// 	    vec3 v_grel = VectorAdd(ball[i].v, CrossProduct(ball[i].omega, ScalarMult(up, -kBallSize)));
-// 	    vec3 friction = ScalarMult(v_grel, -1);
-// 	
-// 	    ball[i].T = VectorAdd(ball[i].T, CrossProduct(ScalarMult(up, -kBallSize), friction));
-// 	    ball[i].F = VectorAdd(ball[i].F, friction);
-// 	    ball[i].omega = MultVec3(ball[i].Ji, ball[i].L);
+//             vec3 axis = CrossProduct(SetVector(0.0,1.0,0.0), ball[i].v);
+//             float speed = 0.01 * Norm(ball[i].v) * glutGet(GLUT_ELAPSED_TIME * 0.001);
+//             ball[i].R = ArbRotate(axis, speed);
 	    
 	    // More correct rotation
 	    // calc friction
-	    // should be between 0.15 - 0.4
-	    float fricCoeff = 0.2;
-	    vec3 vGround = VectorAdd(ball[i].v, CrossProduct(ball[i].omega, (vec3){0, -kBallSize, 0}));
+	    // should be between 0.15 - 0.4 fo a pool table
+	    float fricCoeff = 0.15;
+            vec3 r = SetVector(0.0, kBallSize, 0.0);
+ 	    vec3 vGround = VectorAdd(ball[i].v, CrossProduct(ball[i].omega, r));
+	    
+            vec3 Ff = ScalarMult(vGround, -fricCoeff);
+            ball[i].L = CrossProduct(r, ball[i].P);
+            ball[i].T = VectorAdd(ball[i].T, CrossProduct(r, Ff));    
 
+            if (Norm(vGround) > 0.0001){
+                ball[i].F = VectorAdd(ball[i].F, Ff);
+            }
 	    
-	    vec3 Fn = SetVector(0.0, -9.82 * ball[i].mass, 0.0);
-	    vec3 Friction = ScalarMult(ball[i].v, fricCoeff * Fn);
-	    
-	    ball[i].omega = MultMat3Vec3(mat4tomat3(ball[i].Ji), ball[i].L);
 	}
 
 // Update state, follows the book closely
@@ -248,7 +245,7 @@ void updateWorld()
 
 		// Note: omega is not set. How do you calculate it?
 		// YOUR CODE HERE
-		
+		ball[i].omega = MultMat3Vec3(mat4tomat3(ball[i].Ji), ball[i].L);
 		
 		
 //		v := P * 1/mass
@@ -353,11 +350,11 @@ void init()
 		ball[i].X = SetVector(0.0, 0.0, 0.0);
 		ball[i].P = SetVector(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
 		ball[i].R = IdentityMatrix();
-		ball[i].J = IdentityMatrix();
-		ball[i].J.m[0] = (2 / 5) * ball[i].mass * pow(kBallSize,2);
-		ball[i].J.m[5] = (2 / 5) * ball[i].mass * pow(kBallSize,2);
-		ball[i].J.m[10] = (2 / 5) * ball[i].mass * pow(kBallSize,2);
+                ball[i].L = SetVector(0.0, 0.0, 0.0);
+                float scaling = 2 * ball[i].mass*pow(kBallSize, 2) / 5;
+		ball[i].J = S(scaling, scaling, scaling);
 		ball[i].Ji = InvertMat4(ball[i].J);
+                //printMat4(ball[i].J);
 	}
 	// change mass of white ball
 	ball[0].mass = 5.0;
