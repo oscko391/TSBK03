@@ -21,6 +21,7 @@
 // LŠgg till egna globaler hŠr efter behov.
 float kMaxDistance = 50.0;
 float kCohesionWeight = 0.001;
+float kAlignmentWeight = 0.5;
 
 float euclideanDistance(FPoint a, FPoint b)
 {
@@ -57,6 +58,9 @@ void SpriteBehavior() // Din kod!
                 
                 if ( euclideanDistance(i->position, j->position) < kMaxDistance)
                 {
+                    // alignment
+                    i->speedDiff.h += j->speed.h - i->speed.h;
+                    i->speedDiff.h += j->speed.v - i->speed.v;
                     
                     // cohesion
                     i->averagePosition.h += j->position.h;
@@ -69,6 +73,10 @@ void SpriteBehavior() // Din kod!
         //get average
         if (count > 0)
         {
+            // alignment
+            i->speedDiff.h /= count;
+            i->speedDiff.v /= count;
+            
             // cohesion
             i->averagePosition.h /= count;
             i->averagePosition.v /= count;
@@ -79,13 +87,16 @@ void SpriteBehavior() // Din kod!
     i = gSpriteRoot;
     while ( i != NULL)
     {
+        i->speed.h += i->speedDiff.h * kAlignmentWeight;
+        i->speed.v += i->speedDiff.v * kAlignmentWeight;
+        
         // for cohesion
         i->speed.h += (i->averagePosition.h - i->position.h) * kCohesionWeight;
         i->speed.v += (i->averagePosition.v - i->position.v) * kCohesionWeight;
         
         
-        i->position.h += i->speed.h;
-        i->position.v += i->speed.v;
+        //i->position.h += i->speed.h;
+        //i->position.v += i->speed.v;
         
         i = i->next;
     }
