@@ -223,12 +223,12 @@ void updateWorld()
 	    // More correct rotation
 	    // calc friction
 	    // should be between 0.15 - 0.4 fo a pool table
-	    float fricCoeff = 0.15;
-            vec3 r = SetVector(0.0, kBallSize, 0.0);
+	    float fricCoeff = 0.4;
+            vec3 r = SetVector(0.0, -kBallSize, 0.0);
  	    vec3 vGround = VectorAdd(ball[i].v, CrossProduct(ball[i].omega, r));
 	    
             vec3 Ff = ScalarMult(vGround, -fricCoeff);
-            ball[i].L = CrossProduct(r, ball[i].P);
+            //ball[i].L = CrossProduct(r, ball[i].P);
             ball[i].T = VectorAdd(ball[i].T, CrossProduct(r, Ff));    
 
             if (Norm(vGround) > 0.0001){

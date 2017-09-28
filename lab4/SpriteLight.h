@@ -31,6 +31,7 @@ typedef struct SpriteRec
         FPoint speedDiff;
         FPoint averagePosition;
         FPoint avoidanceVector;
+	FPoint speedSetter;
 } SpriteRec, *SpritePtr;
 
 // Globals: The sprite list, background texture and viewport dimensions (virtual or real pixels)
