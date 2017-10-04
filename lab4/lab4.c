@@ -19,14 +19,28 @@
 #include <math.h>
 
 // LŠgg till egna globaler hŠr efter behov.
-float kMaxDistance = 300.0;
-float kCohesionWeight = 0.0001;
-float kAlignmentWeight = 0.5;
+float kMaxDistance = 200.0;
+float kCohesionWeight = 0.001;
+float kAlignmentWeight = 0.01;
+float kAvoidanceWeight = 0.3;
+float randomWeight = 0.4;
 
+SpritePtr bSheep;
 
 float euclideanDistance(FPoint a, FPoint b)
 {
     return sqrt(pow(a.h - b.h,2) + pow(a.v - b.v,2));
+}
+
+FPoint calcAvoidance(SpritePtr i, SpritePtr j)
+{
+    FPoint avoidance = (FPoint){i->position.h - j->position.h, i->position.v - j->position.v};
+    float distance = sqrt(pow(avoidance.h,2) + pow(avoidance.v, 2));
+    
+    avoidance.h *= (1.0 - distance/kMaxDistance) / distance;
+    avoidance.v *= (1.0 - distance/kMaxDistance) / distance;
+    
+    return avoidance;
 }
 
 void SpriteBehavior() // Din kod!
@@ -39,7 +53,7 @@ void SpriteBehavior() // Din kod!
       
       
       
-    i = j = gSpriteRoot;
+    i = gSpriteRoot;
     
     while( i != NULL)
     {
@@ -51,16 +65,16 @@ void SpriteBehavior() // Din kod!
         i->averagePosition = (FPoint){0.0, 0.0};
         // seperation
         i->avoidanceVector = (FPoint){0.0, 0.0};
+        i->speedSetter = (FPoint){0.0, 0.0};
         j = gSpriteRoot;
+        
         while ( j != NULL)
         {
-	   int index = 0;
+	   
             if (i != j)
             {
-                if ( euclideanDistance(i->position, j->position) < kMaxDistance)
+                if ( euclideanDistance(j->position, i->position) < kMaxDistance)
                 {
-		    printf("index: ");
-		    printf("%i\n", index);
                     // alignment
                     i->speedDiff.h += j->speed.h - i->speed.h;
                     i->speedDiff.v += j->speed.v - i->speed.v;
@@ -69,11 +83,15 @@ void SpriteBehavior() // Din kod!
                     i->averagePosition.h += j->position.h;
                     i->averagePosition.v += j->position.v;
 		    
-                    count++;
+                    // separation
+                    FPoint a = calcAvoidance(i,j);
+                    i->avoidanceVector.h += a.h;
+                    i->avoidanceVector.v += a.v;
+                    
+                    count+=1;
                 }
             }
             j = j->next;
-	    index++;
         }
         //printf("%i\n",count);
         //get average
@@ -86,6 +104,17 @@ void SpriteBehavior() // Din kod!
             // cohesion
             i->averagePosition.h /= count;
             i->averagePosition.v /= count;
+            
+            //separation
+            i->avoidanceVector.h /= count;
+            i->avoidanceVector.v /= count;
+            
+            i->speedSetter.h = (i->averagePosition.h - i->position.h) * kCohesionWeight
+                                + i->speedDiff.h * kAlignmentWeight
+                                + i->avoidanceVector.h * kAvoidanceWeight;
+            i->speedSetter.v = (i->averagePosition.v - i->position.v) * kCohesionWeight
+                                + i->speedDiff.v * kAlignmentWeight
+                                + i->avoidanceVector.v * kAvoidanceWeight;
         }
         
         i = i->next;
@@ -93,22 +122,16 @@ void SpriteBehavior() // Din kod!
     i = gSpriteRoot;
     while ( i != NULL)
     {
-        i->speed.h += i->speedDiff.h * kAlignmentWeight;
-        i->speed.v += i->speedDiff.v * kAlignmentWeight;
-        
-// 	printf("avg P");
-// 	printf("%f\n", i->averagePosition.h);
-// 	
         // for cohesion
-        i->speed.h += (i->averagePosition.h - i->position.h) * kCohesionWeight;
-        i->speed.v += (i->averagePosition.v - i->position.v) * kCohesionWeight;
-	//printf("%f\n", i->averagePosition.h);
-  
-        //i->position.h += i->speed.h;
-        //i->position.v += i->speed.v;
+        i->speed.h += i->speedSetter.h;
+        i->speed.v += i->speedSetter.v;
         
         i = i->next;
     }
+    
+    bSheep->speed.h += fmodf(rand(), randomWeight) - randomWeight/2.0;
+    bSheep->speed.v += fmodf(rand(), randomWeight) - randomWeight/2.0;
+   
     
 }
 
@@ -170,11 +193,11 @@ void Key(unsigned char key,
     	printf("kCohesionWeight = %f\n", kCohesionWeight);
     	break;
     case 'w':
-    	kAlignmentWeight += 0.1;
+    	kAlignmentWeight += 0.005;
     	printf("kAlignmentWeight = %f\n", kAlignmentWeight);
     	break;
     case 's':
-    	kAlignmentWeight -= 0.1;
+    	kAlignmentWeight -= 0.005;
     	printf("kAlignmentWeight = %f\n", kAlignmentWeight);
     	break;
     case 0x1b:
@@ -199,6 +222,7 @@ void Init()
 	NewSprite(sheepFace, 500, 200, 0.0, 1.0);
 	NewSprite(sheepFace, 600, 200, -1.5, -0.5);
 	NewSprite(sheepFace, 700, 200, 1.0, -1.0);
+        bSheep = NewSprite(blackFace, 400, 300, 1.0, -1.0);
 }
 
 int main(int argc, char **argv)
