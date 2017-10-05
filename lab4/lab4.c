@@ -24,8 +24,10 @@ float kCohesionWeight = 0.001;
 float kAlignmentWeight = 0.01;
 float kAvoidanceWeight = 0.3;
 float randomWeight = 0.4;
+float kDogAvoidance = 0.9;
 
 SpritePtr bSheep;
+SpritePtr dog;
 
 float euclideanDistance(FPoint a, FPoint b)
 {
@@ -70,27 +72,35 @@ void SpriteBehavior() // Din kod!
         
         while ( j != NULL)
         {
-	   
-            if (i != j)
+            if (i != j && i != dog && j != dog)
             {
                 if ( euclideanDistance(j->position, i->position) < kMaxDistance)
                 {
-                    // alignment
-                    i->speedDiff.h += j->speed.h - i->speed.h;
-                    i->speedDiff.v += j->speed.v - i->speed.v;
                     
-                    // cohesion
-                    i->averagePosition.h += j->position.h;
-                    i->averagePosition.v += j->position.v;
-		    
-                    // separation
-                    FPoint a = calcAvoidance(i,j);
-                    i->avoidanceVector.h += a.h;
-                    i->avoidanceVector.v += a.v;
-                    
-                    count+=1;
+                        // alignment
+                        i->speedDiff.h += j->speed.h - i->speed.h;
+                        i->speedDiff.v += j->speed.v - i->speed.v;
+                        
+                        // cohesion
+                        i->averagePosition.h += j->position.h;
+                        i->averagePosition.v += j->position.v;
+                        
+                        // separation
+                        FPoint a = calcAvoidance(i,j);
+                        i->avoidanceVector.h += a.h;
+                        i->avoidanceVector.v += a.v;
+                        
+                        count+=1;
+                   
                 }
             }
+            
+            if (j == dog && euclideanDistance(i->position,j->position) < kMaxDistance)
+            {
+                i->speed.h += 1/(euclideanDistance(i->position,j->position) + 0.01) * kDogAvoidance * (i->position.h - j->position.h);
+                i->speed.v += 1/(euclideanDistance(i->position,j->position) + 0.01) * kDogAvoidance * (i->position.v - j->position.v);
+            }
+            
             j = j->next;
         }
         //printf("%i\n",count);
@@ -122,6 +132,7 @@ void SpriteBehavior() // Din kod!
     i = gSpriteRoot;
     while ( i != NULL)
     {
+        
         // for cohesion
         i->speed.h += i->speedSetter.h;
         i->speed.v += i->speedSetter.v;
@@ -205,6 +216,8 @@ void Key(unsigned char key,
   }
 }
 
+
+
 void Init()
 {
 	TextureData *sheepFace, *blackFace, *dogFace, *foodFace;
@@ -222,7 +235,10 @@ void Init()
 	NewSprite(sheepFace, 500, 200, 0.0, 1.0);
 	NewSprite(sheepFace, 600, 200, -1.5, -0.5);
 	NewSprite(sheepFace, 700, 200, 1.0, -1.0);
-        bSheep = NewSprite(blackFace, 400, 300, 1.0, -1.0);
+        bSheep = NewSprite(blackFace, 700, 100, 1.0, -1.0);
+        dog = NewSprite(dogFace, 50, 50, 2.0, 2.0);
+        
+        //food = NewSprite(foodFace, 250, 250, 0, 0);
 }
 
 int main(int argc, char **argv)
